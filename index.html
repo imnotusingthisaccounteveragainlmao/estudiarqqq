@@ -18,9 +18,13 @@
   <button id="startBtn">Iniciar</button>
 
   <script>
-    const studyDuration = 5 * 1000;  // 5 segundos
-    const breakDuration = 3 * 1000;  // 3 segundos
+    // ⏱️ Duraciones reales
+    const studyDuration = 50 * 60 * 1000;  // 50 minutos
+    const breakDuration = 10 * 60 * 1000;  // 10 minutos
 
+    // 🧪 Para pruebas rápidas, descomenta estas:
+    // const studyDuration = 5 * 1000;  // 5 segundos
+    // const breakDuration = 3 * 1000;  // 3 segundos
 
     let phase = 'study';
     let endTime = null;
@@ -47,7 +51,7 @@
         localStorage.setItem('phase', phase);
         localStorage.setItem('endTime', endTime.toString());
 
-        // Reproducir sonido al cambiar fase
+        // 🔊 Reproducir sonido al cambiar fase
         if (prevPhase === 'study') {
           soundStudyToBreak.play();
         } else {
@@ -66,13 +70,13 @@
     }
 
     document.getElementById('startBtn').addEventListener('click', () => {
-      // Cargar sonidos desde archivos locales en tu servidor
+      // 🎵 Cargar sonidos desde archivos locales
       soundStudyToBreak = new Audio('./study_end.mp3');
       soundBreakToStudy = new Audio('./break_end.mp3');
       soundStudyToBreak.load();
       soundBreakToStudy.load();
 
-      // Cargar estado anterior si existe
+      // ⏳ Recuperar estado anterior
       phase = localStorage.getItem('phase') || 'study';
       endTime = localStorage.getItem('endTime');
       if (endTime) endTime = parseInt(endTime);
