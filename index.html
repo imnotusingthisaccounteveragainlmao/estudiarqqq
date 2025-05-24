@@ -3,42 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Temporizador Pomodoro</title>
+  <title>Temporizador Pomodoro con Sonidos Personalizados</title>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
     #timer { font-size: 60px; margin-bottom: 20px; }
     #status { font-size: 24px; margin-bottom: 20px; }
+    #startBtn { padding: 10px 20px; font-size: 18px; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <div id="status">Cargando...</div>
+  <div id="status">Presiona "Iniciar" para comenzar</div>
   <div id="timer">00:00</div>
+  <button id="startBtn">Iniciar</button>
 
   <script>
-    const studyDuration = 50 * 60 * 1000; // 50 minutos en ms
-    const breakDuration = 10 * 60 * 1000; // 10 minutos en ms
+    const studyDuration = 50 * 60 * 1000; // 50 minutos
+    const breakDuration = 10 * 60 * 1000; // 10 minutos
 
-    // Lee la fase y endTime guardados o usa valores por defecto
-    let phase = localStorage.getItem('phase') || 'study'; // 'study' o 'break'
-    let endTime = localStorage.getItem('endTime');
-    if (endTime) endTime = parseInt(endTime);
+    let phase = 'study';  // 'study' o 'break'
+    let endTime = null;
+
+    // Sonidos personalizados
+    const soundStudyToBreak = new Audio('https://media1.vocaroo.com/mp3/1ngNdz60nbvL');
+    const soundBreakToStudy = new Audio('https://media1.vocaroo.com/mp3/1g8OYi5PA7mU');
 
     function initTimer() {
       const now = Date.now();
-
-      if (!endTime || now > endTime) {
-        // Si no hay endTime o ya pasó, inicia un nuevo periodo
-        if (phase === 'study') {
-          phase = 'break';
-          endTime = now + breakDuration;
-        } else {
-          phase = 'study';
-          endTime = now + studyDuration;
-        }
-        localStorage.setItem('phase', phase);
-        localStorage.setItem('endTime', endTime.toString());
-      }
+      phase = 'study';
+      endTime = now + studyDuration;
+      localStorage.setItem('phase', phase);
+      localStorage.setItem('endTime', endTime.toString());
     }
 
     function updateTimer() {
@@ -46,7 +41,8 @@
       let timeLeft = endTime - now;
 
       if (timeLeft <= 0) {
-        // Cambiar fase y reiniciar tiempo
+        // Cambiar fase
+        const prevPhase = phase;
         phase = (phase === 'study') ? 'break' : 'study';
 
         if (phase === 'study') {
@@ -58,23 +54,50 @@
         endTime = now + timeLeft;
         localStorage.setItem('phase', phase);
         localStorage.setItem('endTime', endTime.toString());
+
+        // Reproducir sonido según cambio
+        if (prevPhase === 'study' && phase === 'break') {
+          soundStudyToBreak.play().catch(() => {
+            console.log('Sonido bloqueado por autoplay');
+          });
+        } else if (prevPhase === 'break' && phase === 'study') {
+          soundBreakToStudy.play().catch(() => {
+            console.log('Sonido bloqueado por autoplay');
+          });
+        }
       }
 
-      // Formatear tiempo mm:ss
       const minutes = Math.floor(timeLeft / 60000);
       const seconds = Math.floor((timeLeft % 60000) / 1000);
       const formattedTime = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
 
-      // Actualizar DOM
       document.getElementById('timer').textContent = formattedTime;
       document.getElementById('status').textContent = (phase === 'study') ? 'Estudiando' : 'Descanso';
 
       requestAnimationFrame(updateTimer);
     }
 
-    // Inicializar y arrancar temporizador
-    initTimer();
-    updateTimer();
+    function start() {
+      phase = localStorage.getItem('phase') || 'study';
+      endTime = localStorage.getItem('endTime');
+      if (endTime) endTime = parseInt(endTime);
+
+      const now = Date.now();
+      if (!endTime || now > endTime) {
+        initTimer();
+      }
+
+      updateTimer();
+
+      document.getElementById('startBtn').style.display = 'none';
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      start();
+      // Intenta desbloquear audio con interacción
+      soundStudyToBreak.play().catch(() => {});
+      soundBreakToStudy.play().catch(() => {});
+    });
   </script>
 </body>
 </html>
