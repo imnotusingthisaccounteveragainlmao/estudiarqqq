@@ -1,0 +1,47 @@
+body {
+  font-family: 'Arial', sans-serif;
+  background: #f2f2f2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  text-align: center;
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+#timer {
+  font-size: 4rem;
+  margin: 20px 0;
+  color: #333;
+}
+
+button {
+  padding: 10px 20px;
+  margin: 5px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#start {
+  background-color: #4CAF50;
+  color: white;
+}
+
+#reset {
+  background-color: #f44336;
+  color: white;
+}
+
+#status {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  color: #555;
+}
