@@ -1,19 +1,80 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>temporizadorqqq</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Temporizador Pomodoro</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+    #timer { font-size: 60px; margin-bottom: 20px; }
+    #status { font-size: 24px; margin-bottom: 20px; }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Temporizador de Estudio</h1>
-    <div id="timer">50:00</div>
-    <p id="status">Tiempo de estudio</p>
-    <button id="start">Iniciar</button>
-    <button id="reset">Reiniciar</button>
-  </div>
-  <script src="script.js"></script>
+
+  <div id="status">Cargando...</div>
+  <div id="timer">00:00</div>
+
+  <script>
+    const studyDuration = 50 * 60 * 1000; // 50 minutos en ms
+    const breakDuration = 10 * 60 * 1000; // 10 minutos en ms
+
+    // Lee la fase y endTime guardados o usa valores por defecto
+    let phase = localStorage.getItem('phase') || 'study'; // 'study' o 'break'
+    let endTime = localStorage.getItem('endTime');
+    if (endTime) endTime = parseInt(endTime);
+
+    function initTimer() {
+      const now = Date.now();
+
+      if (!endTime || now > endTime) {
+        // Si no hay endTime o ya pasó, inicia un nuevo periodo
+        if (phase === 'study') {
+          phase = 'break';
+          endTime = now + breakDuration;
+        } else {
+          phase = 'study';
+          endTime = now + studyDuration;
+        }
+        localStorage.setItem('phase', phase);
+        localStorage.setItem('endTime', endTime.toString());
+      }
+    }
+
+    function updateTimer() {
+      const now = Date.now();
+      let timeLeft = endTime - now;
+
+      if (timeLeft <= 0) {
+        // Cambiar fase y reiniciar tiempo
+        phase = (phase === 'study') ? 'break' : 'study';
+
+        if (phase === 'study') {
+          timeLeft = studyDuration;
+        } else {
+          timeLeft = breakDuration;
+        }
+
+        endTime = now + timeLeft;
+        localStorage.setItem('phase', phase);
+        localStorage.setItem('endTime', endTime.toString());
+      }
+
+      // Formatear tiempo mm:ss
+      const minutes = Math.floor(timeLeft / 60000);
+      const seconds = Math.floor((timeLeft % 60000) / 1000);
+      const formattedTime = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+
+      // Actualizar DOM
+      document.getElementById('timer').textContent = formattedTime;
+      document.getElementById('status').textContent = (phase === 'study') ? 'Estudiando' : 'Descanso';
+
+      requestAnimationFrame(updateTimer);
+    }
+
+    // Inicializar y arrancar temporizador
+    initTimer();
+    updateTimer();
+  </script>
 </body>
 </html>
