@@ -18,15 +18,12 @@
   <button id="startBtn">Iniciar</button>
 
   <script>
-    const studyDuration = 50 * 60 * 1000; // 50 minutos
-    const breakDuration = 10 * 60 * 1000; // 10 minutos
+    const studyDuration = 50 * 60 * 1000;
+    const breakDuration = 10 * 60 * 1000;
 
-    let phase = 'study';  // 'study' o 'break'
+    let phase = 'study';
     let endTime = null;
-
-    // Sonidos personalizados
-    const soundStudyToBreak = new Audio('https://media1.vocaroo.com/mp3/1ngNdz60nbvL');
-    const soundBreakToStudy = new Audio('https://media1.vocaroo.com/mp3/1g8OYi5PA7mU');
+    let soundStudyToBreak, soundBreakToStudy;
 
     function initTimer() {
       const now = Date.now();
@@ -41,7 +38,6 @@
       let timeLeft = endTime - now;
 
       if (timeLeft <= 0) {
-        // Cambiar fase
         const prevPhase = phase;
         phase = (phase === 'study') ? 'break' : 'study';
 
@@ -55,15 +51,11 @@
         localStorage.setItem('phase', phase);
         localStorage.setItem('endTime', endTime.toString());
 
-        // Reproducir sonido según cambio
-        if (prevPhase === 'study' && phase === 'break') {
-          soundStudyToBreak.play().catch(() => {
-            console.log('Sonido bloqueado por autoplay');
-          });
-        } else if (prevPhase === 'break' && phase === 'study') {
-          soundBreakToStudy.play().catch(() => {
-            console.log('Sonido bloqueado por autoplay');
-          });
+        // Reproducir sonido después de cambio
+        if (prevPhase === 'study') {
+          soundStudyToBreak.play();
+        } else if (prevPhase === 'break') {
+          soundBreakToStudy.play();
         }
       }
 
@@ -77,26 +69,26 @@
       requestAnimationFrame(updateTimer);
     }
 
-    function start() {
+    document.getElementById('startBtn').addEventListener('click', () => {
+      // Cargar sonidos DESPUÉS del clic
+      soundStudyToBreak = new Audio('https://media1.vocaroo.com/mp3/1ngNdz60nbvL');
+      soundBreakToStudy = new Audio('https://media1.vocaroo.com/mp3/1g8OYi5PA7mU');
+
+      // Forzar carga para evitar delay luego
+      soundStudyToBreak.load();
+      soundBreakToStudy.load();
+
+      // Recuperar estado guardado
       phase = localStorage.getItem('phase') || 'study';
       endTime = localStorage.getItem('endTime');
       if (endTime) endTime = parseInt(endTime);
-
       const now = Date.now();
       if (!endTime || now > endTime) {
         initTimer();
       }
 
       updateTimer();
-
       document.getElementById('startBtn').style.display = 'none';
-    }
-
-    document.getElementById('startBtn').addEventListener('click', () => {
-      start();
-      // Intenta desbloquear audio con interacción
-      soundStudyToBreak.play().catch(() => {});
-      soundBreakToStudy.play().catch(() => {});
     });
   </script>
 </body>
