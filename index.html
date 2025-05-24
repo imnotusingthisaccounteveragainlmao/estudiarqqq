@@ -4,11 +4,54 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>temporizadorqqq</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-    #timer { font-size: 60px; margin-bottom: 20px; }
-    #status { font-size: 24px; margin-bottom: 20px; }
-    #startBtn { padding: 10px 20px; font-size: 18px; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+      background-color: #111;
+      color: #eee;
+    }
+
+    #timer {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 72px;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+      transition: transform 0.3s;
+      display: inline-block;
+    }
+
+    #status {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+
+    #startBtn {
+      padding: 12px 24px;
+      font-size: 20px;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      background-color: #00c896;
+      color: white;
+      transition: background 0.2s;
+    }
+
+    #startBtn:hover {
+      background-color: #00a77a;
+    }
+
+    @keyframes flip {
+      0% { transform: rotateX(0); }
+      50% { transform: rotateX(90deg); opacity: 0.3; }
+      100% { transform: rotateX(0); opacity: 1; }
+    }
+
+    #timer.flip {
+      animation: flip 0.4s ease;
+    }
   </style>
 </head>
 <body>
@@ -24,6 +67,7 @@
     let phase = 'study';
     let endTime = null;
     let soundStudyToBreak, soundBreakToStudy;
+    let timerEl = document.getElementById('timer');
 
     function initTimer() {
       const now = Date.now();
@@ -40,48 +84,39 @@
       if (timeLeft <= 0) {
         const prevPhase = phase;
         phase = (phase === 'study') ? 'break' : 'study';
-
-        if (phase === 'study') {
-          timeLeft = studyDuration;
-        } else {
-          timeLeft = breakDuration;
-        }
-
+        timeLeft = (phase === 'study') ? studyDuration : breakDuration;
         endTime = now + timeLeft;
+
         localStorage.setItem('phase', phase);
         localStorage.setItem('endTime', endTime.toString());
 
-        // Reproducir sonido después de cambio
-        if (prevPhase === 'study') {
-          soundStudyToBreak.play();
-        } else if (prevPhase === 'break') {
-          soundBreakToStudy.play();
-        }
+        if (prevPhase === 'study') soundStudyToBreak.play();
+        if (prevPhase === 'break') soundBreakToStudy.play();
       }
 
       const minutes = Math.floor(timeLeft / 60000);
       const seconds = Math.floor((timeLeft % 60000) / 1000);
       const formattedTime = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
 
-      document.getElementById('timer').textContent = formattedTime;
-      document.getElementById('status').textContent = (phase === 'study') ? 'Estudiando' : 'Descanso';
+      if (timerEl.textContent !== formattedTime) {
+        timerEl.textContent = formattedTime;
+        timerEl.classList.remove('flip');
+        void timerEl.offsetWidth; // force reflow
+        timerEl.classList.add('flip');
+      }
 
+      document.getElementById('status').textContent = (phase === 'study') ? 'Estudiando' : 'Descanso';
       requestAnimationFrame(updateTimer);
     }
 
     document.getElementById('startBtn').addEventListener('click', () => {
-      // Cargar sonidos DESPUÉS del clic
       soundStudyToBreak = new Audio('https://media1.vocaroo.com/mp3/1ngNdz60nbvL');
       soundBreakToStudy = new Audio('https://media1.vocaroo.com/mp3/1g8OYi5PA7mU');
-
-      // Forzar carga para evitar delay luego
       soundStudyToBreak.load();
       soundBreakToStudy.load();
 
-      // Recuperar estado guardado
       phase = localStorage.getItem('phase') || 'study';
-      endTime = localStorage.getItem('endTime');
-      if (endTime) endTime = parseInt(endTime);
+      endTime = parseInt(localStorage.getItem('endTime'));
       const now = Date.now();
       if (!endTime || now > endTime) {
         initTimer();
