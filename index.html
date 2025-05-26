@@ -7,7 +7,7 @@
   <style>
     body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
     #timer { font-size: 60px; margin-bottom: 20px; }
-    #status, #subject { font-size: 24px; margin-bottom: 10px; }
+    #status, #subject, #nextSubjects { font-size: 24px; margin-bottom: 10px; }
     button { padding: 10px 20px; font-size: 18px; margin: 5px; cursor: pointer; }
     .confetti { position: fixed; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 1000; }
   </style>
@@ -16,103 +16,132 @@
 
   <div id="status">Esperando horario...</div>
   <div id="subject"></div>
+  <div id="nextSubjects"></div>
   <div id="timer">00:00</div>
   <button id="startBtn">Iniciar</button>
+  <button id="testSound">🔊 Probar Sonido</button>
+
+  <audio id="studyEndSound" src="study_end.mp3"></audio>
+  <audio id="breakEndSound" src="break_end.mp3"></audio>
 
   <script>
+    const studyEndSound = document.getElementById("studyEndSound");
+    const breakEndSound = document.getElementById("breakEndSound");
+
     const schedule = {
-      '2024-05-24': ['18:00-21:00:English', '18:00-21:00:Biology'],
-      '2024-05-25': ['10:00-14:00:Biology', '16:00-20:00:Maths'],
-      '2024-05-26': ['10:00-14:00:Maths', '16:00-20:00:History'],
-      '2024-05-27': ['18:00-21:00:English', '18:00-21:00:Biology'],
-      '2024-05-28': ['18:00-21:00:Maths'],
-      '2024-05-29': ['18:00-21:00:Physics'],
-      '2024-05-30': ['18:00-21:00:Physics', '18:00-21:00:German'],
-      '2024-05-31': ['18:00-21:00:German'],
-      '2024-06-01': ['10:00-14:00:Physics', '16:00-20:00:German'],
-      '2024-06-02': ['16:00-20:00:Lengua'],
-      '2024-06-03': ['18:00-21:00:Comp Sci']
+      '2024-05-28': ['09:30-10:20:Biology (MC)', '11:30-13:10:English', '15:10-16:15:Biology (Theory)'],
+      '2024-05-29': ['09:30-10:20:Maths (Non-calc)', '12:20-14:00:History'],
+      '2024-05-30': [],
+      '2024-06-02': ['09:15-11:10:Physics (MC)', '11:30-13:10:Physics (Theory)', '15:10-16:45:German'],
+      '2024-06-03': ['15:10-16:00:Lengua'],
+      '2024-06-04': []
     };
 
-    const studyEndSound = new Audio('./study_end.mp3');
-    const breakEndSound = new Audio('./break_end.mp3');
-    studyEndSound.load();
-    breakEndSound.load();
+    const studyPlan = {
+      '2024-05-25': ['Biology'],
+      '2024-05-26': ['Biology', 'English'],
+      '2024-05-27': ['English', 'History'],
+      '2024-05-28': ['Maths'],
+      '2024-05-29': ['Physics'],
+      '2024-05-30': ['Physics', 'German'],
+      '2024-06-01': ['Lengua']
+    };
 
-    function getCurrentSubject() {
+    let isStudy = true;
+    let timer;
+    let endTime;
+
+    function isStudyTime() {
       const now = new Date();
-      const today = now.toISOString().split('T')[0];
-      const timeStr = now.toTimeString().slice(0,5);
-      const subjects = schedule[today] || [];
-      for (let entry of subjects) {
-        const [range, subject] = entry.split(':');
-        const [start, end] = range.split('-');
-        if (timeStr >= start && timeStr <= end) {
-          return subject;
-        }
+      const day = now.getDay();
+      const hour = now.getHours();
+      const minutes = now.getMinutes();
+
+      if (day >= 1 && day <= 5) return hour >= 18 && hour < 21;
+      if (day === 0 || day === 6) {
+        const totalMinutes = hour * 60 + minutes;
+        return (totalMinutes >= 600 && totalMinutes < 840) || (totalMinutes >= 960 && totalMinutes < 1200);
       }
-      return null;
+      return false;
     }
 
-    function showConfetti() {
-      const confetti = document.createElement('div');
-      confetti.className = 'confetti';
-      confetti.innerHTML = '<h1 style="color: green; font-size: 50px;">🎉 ¡Terminado! 👍</h1>';
+    function getTodaySubjects() {
+      const today = new Date().toISOString().slice(0, 10);
+      return studyPlan[today] || [];
+    }
+
+    function updateDisplay() {
+      const statusEl = document.getElementById("status");
+      const subjectEl = document.getElementById("subject");
+      const nextSubjectsEl = document.getElementById("nextSubjects");
+
+      if (!isStudyTime()) {
+        statusEl.innerText = "⛔ No es hora de estudiar.";
+        subjectEl.innerText = "";
+        return;
+      }
+
+      statusEl.innerText = isStudy ? "📚 Estudiando..." : "☕ Descanso...";
+      const subjects = getTodaySubjects();
+      subjectEl.innerText = "Materia: " + (subjects.length > 0 ? subjects[0] : "General");
+      nextSubjectsEl.innerText = "Próximas: " + subjects.slice(1).join(", ");
+    }
+
+    function startTimer(duration) {
+      const timerEl = document.getElementById("timer");
+      endTime = Date.now() + duration * 1000;
+
+      clearInterval(timer);
+      timer = setInterval(() => {
+        const now = Date.now();
+        const remaining = Math.max(0, endTime - now);
+        const mins = Math.floor(remaining / 60000);
+        const secs = Math.floor((remaining % 60000) / 1000);
+        timerEl.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+        if (remaining <= 0) {
+          clearInterval(timer);
+          finishSession();
+        }
+      }, 1000);
+    }
+
+    function finishSession() {
+      const statusEl = document.getElementById("status");
+      const confetti = document.createElement("div");
+      confetti.className = "confetti";
+      confetti.innerHTML = "<h1 style='color: green; font-size: 50px;'>🎉 ¡Terminado! 👍</h1>";
       document.body.appendChild(confetti);
-      setTimeout(() => confetti.remove(), 5000);
-    }
+      setTimeout(() => confetti.remove(), 4000);
 
-    let phase = 'study';
-    let endTime = null;
-    let interval = null;
-
-    function startPhase(durationMinutes) {
-      endTime = Date.now() + durationMinutes * 60 * 1000;
-      updateTimer();
-    }
-
-    function updateTimer() {
-      const now = Date.now();
-      let timeLeft = endTime - now;
-
-      if (timeLeft <= 0) {
-        if (phase === 'study') {
-          studyEndSound.play();
-          phase = 'break';
-          document.getElementById('status').textContent = 'Descanso';
-          document.getElementById('subject').textContent = '';
-          startPhase(10);
-        } else if (phase === 'break') {
-          breakEndSound.play();
-          phase = 'study';
-          const subject = getCurrentSubject();
-          document.getElementById('status').textContent = 'Estudiando';
-          document.getElementById('subject').textContent = `Materia: ${subject ?? 'Desconocida'}`;
-          startPhase(50);
-        }
-        return;
+      if (isStudy) {
+        studyEndSound.play();
+      } else {
+        breakEndSound.play();
       }
 
-      const minutes = Math.floor(timeLeft / 60000);
-      const seconds = Math.floor((timeLeft % 60000) / 1000);
-      document.getElementById('timer').textContent = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
-
-      interval = requestAnimationFrame(updateTimer);
+      isStudy = !isStudy;
+      updateDisplay();
+      startTimer(isStudy ? 50 * 60 : 10 * 60);
     }
 
-    document.getElementById('startBtn').addEventListener('click', () => {
-      const subject = getCurrentSubject();
-      if (!subject) {
-        document.getElementById('status').textContent = 'No es hora de estudiar';
+    document.getElementById("startBtn").onclick = () => {
+      if (!isStudyTime()) {
+        alert("No estás en un horario válido para estudiar.");
         return;
       }
+      isStudy = true;
+      updateDisplay();
+      startTimer(50 * 60);
+    };
 
-      phase = 'study';
-      document.getElementById('status').textContent = 'Estudiando';
-      document.getElementById('subject').textContent = `Materia: ${subject}`;
-      startPhase(50);
-      document.getElementById('startBtn').style.display = 'none';
-    });
+    document.getElementById("testSound").onclick = () => {
+      studyEndSound.play();
+      breakEndSound.play();
+    };
+
+    updateDisplay();
+    setInterval(updateDisplay, 60 * 1000); // actualiza estado cada minuto
   </script>
 </body>
 </html>
