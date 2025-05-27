@@ -3,13 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pomodoro Estudio</title>
+  <title>temporizadorqqq</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-    #timer { font-size: 60px; margin-bottom: 20px; }
-    #status, #subject { font-size: 24px; margin-bottom: 10px; }
-    button { padding: 10px 20px; font-size: 18px; margin: 5px; cursor: pointer; }
-    .confetti { position: fixed; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 1000; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    #timer {
+      font-size: 60px;
+      margin-bottom: 20px;
+    }
+    #status, #subject {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    .confetti {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
@@ -20,14 +43,14 @@
   <button id="startBtn">Iniciar</button>
   <button id="testSound">🔊 Probar Sonido</button>
 
-  <audio id="studyEndSound" src="study_end.mp3"></audio>
-  <audio id="breakEndSound" src="break_end.mp3"></audio>
+  <audio id="studyEndSound" src="study_end.mp3" preload="auto"></audio>
+  <audio id="breakEndSound" src="break_end.mp3" preload="auto"></audio>
 
   <script>
     const studyEndSound = document.getElementById("studyEndSound");
     const breakEndSound = document.getElementById("breakEndSound");
 
-    const allowedStartHours = [18, 19, 20]; // bloques válidos
+    const allowedStartHours = [18, 19, 20];
     let isStudy = true;
     let timer;
     let endTime;
@@ -42,7 +65,7 @@
       const subjectEl = document.getElementById("subject");
       const now = new Date();
 
-      if (!isStudyBlock()) {
+      if (!isStudyBlock() && !localStorage.getItem("endTime")) {
         statusEl.innerText = "⛔ No es hora de estudio. Vuelve a las 18:00, 19:00 o 20:00.";
         subjectEl.innerText = "";
         return;
@@ -53,8 +76,9 @@
     }
 
     function startTimer(duration) {
-      const timerEl = document.getElementById("timer");
       endTime = Date.now() + duration * 1000;
+      localStorage.setItem("endTime", endTime);
+      localStorage.setItem("isStudy", isStudy);
 
       clearInterval(timer);
       timer = setInterval(() => {
@@ -62,7 +86,8 @@
         const remaining = Math.max(0, endTime - now);
         const mins = Math.floor(remaining / 60000);
         const secs = Math.floor((remaining % 60000) / 1000);
-        timerEl.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        document.getElementById("timer").innerText =
+          `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
         if (remaining <= 0) {
           clearInterval(timer);
@@ -72,8 +97,6 @@
     }
 
     function finishSession() {
-      const statusEl = document.getElementById("status");
-
       const confetti = document.createElement("div");
       confetti.className = "confetti";
       confetti.innerHTML = "<h1 style='color: green; font-size: 50px;'>🎉 ¡Terminado! 👍</h1>";
@@ -96,6 +119,7 @@
         alert("⛔ Solo puedes empezar a las 18:00, 19:00 o 20:00.");
         return;
       }
+
       isStudy = true;
       updateDisplay();
       startTimer(50 * 60);
@@ -106,7 +130,27 @@
       breakEndSound.play();
     };
 
-    updateDisplay();
+    // Restaurar estado al recargar la página
+    window.onload = () => {
+      const savedEndTime = localStorage.getItem("endTime");
+      const savedIsStudy = localStorage.getItem("isStudy");
+
+      if (savedEndTime && savedIsStudy !== null) {
+        const remaining = Math.max(0, parseInt(savedEndTime) - Date.now());
+        isStudy = savedIsStudy === "true";
+        updateDisplay();
+
+        if (remaining > 0) {
+          startTimer(remaining / 1000);
+        } else {
+          finishSession();
+        }
+      } else {
+        updateDisplay();
+      }
+    };
+
+    // Actualizar el estado cada minuto por si cambia la hora
     setInterval(updateDisplay, 60 * 1000);
   </script>
 </body>
