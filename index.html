@@ -3,20 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>temporizadorqqq</title>
+  <title>Pomodoro Estudio</title>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
     #timer { font-size: 60px; margin-bottom: 20px; }
-    #status, #subject, #nextSubjects { font-size: 24px; margin-bottom: 10px; }
+    #status, #subject { font-size: 24px; margin-bottom: 10px; }
     button { padding: 10px 20px; font-size: 18px; margin: 5px; cursor: pointer; }
     .confetti { position: fixed; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 1000; }
   </style>
 </head>
 <body>
 
-  <div id="status">Esperando horario...</div>
-  <div id="subject"></div>
-  <div id="nextSubjects"></div>
+  <div id="status">⏳ Esperando...</div>
+  <div id="subject">Materia: General</div>
   <div id="timer">00:00</div>
   <button id="startBtn">Iniciar</button>
   <button id="testSound">🔊 Probar Sonido</button>
@@ -28,63 +27,29 @@
     const studyEndSound = document.getElementById("studyEndSound");
     const breakEndSound = document.getElementById("breakEndSound");
 
-    const schedule = {
-      '2024-05-28': ['09:30-10:20:Biology (MC)', '11:30-13:10:English', '15:10-16:15:Biology (Theory)'],
-      '2024-05-29': ['09:30-10:20:Maths (Non-calc)', '12:20-14:00:History'],
-      '2024-05-30': [],
-      '2024-06-02': ['09:15-11:10:Physics (MC)', '11:30-13:10:Physics (Theory)', '15:10-16:45:German'],
-      '2024-06-03': ['15:10-16:00:Lengua'],
-      '2024-06-04': []
-    };
-
-    const studyPlan = {
-      '2024-05-25': ['Biology'],
-      '2024-05-26': ['Biology', 'English'],
-      '2024-05-27': ['English', 'History'],
-      '2024-05-28': ['Maths'],
-      '2024-05-29': ['Physics'],
-      '2024-05-30': ['Physics', 'German'],
-      '2024-06-01': ['Lengua']
-    };
-
+    const allowedStartHours = [18, 19, 20]; // bloques válidos
     let isStudy = true;
     let timer;
     let endTime;
 
-    function isStudyTime() {
+    function isStudyBlock() {
       const now = new Date();
-      const day = now.getDay();
-      const hour = now.getHours();
-      const minutes = now.getMinutes();
-
-      if (day >= 1 && day <= 5) return hour >= 18 && hour < 21;
-      if (day === 0 || day === 6) {
-        const totalMinutes = hour * 60 + minutes;
-        return (totalMinutes >= 600 && totalMinutes < 840) || (totalMinutes >= 960 && totalMinutes < 1200);
-      }
-      return false;
-    }
-
-    function getTodaySubjects() {
-      const today = new Date().toISOString().slice(0, 10);
-      return studyPlan[today] || [];
+      return allowedStartHours.includes(now.getHours());
     }
 
     function updateDisplay() {
       const statusEl = document.getElementById("status");
       const subjectEl = document.getElementById("subject");
-      const nextSubjectsEl = document.getElementById("nextSubjects");
+      const now = new Date();
 
-      if (!isStudyTime()) {
-        statusEl.innerText = "⛔ No es hora de estudiar.";
+      if (!isStudyBlock()) {
+        statusEl.innerText = "⛔ No es hora de estudio. Vuelve a las 18:00, 19:00 o 20:00.";
         subjectEl.innerText = "";
         return;
       }
 
       statusEl.innerText = isStudy ? "📚 Estudiando..." : "☕ Descanso...";
-      const subjects = getTodaySubjects();
-      subjectEl.innerText = "Materia: " + (subjects.length > 0 ? subjects[0] : "General");
-      nextSubjectsEl.innerText = "Próximas: " + subjects.slice(1).join(", ");
+      subjectEl.innerText = "Materia: General";
     }
 
     function startTimer(duration) {
@@ -108,6 +73,7 @@
 
     function finishSession() {
       const statusEl = document.getElementById("status");
+
       const confetti = document.createElement("div");
       confetti.className = "confetti";
       confetti.innerHTML = "<h1 style='color: green; font-size: 50px;'>🎉 ¡Terminado! 👍</h1>";
@@ -126,8 +92,8 @@
     }
 
     document.getElementById("startBtn").onclick = () => {
-      if (!isStudyTime()) {
-        alert("No estás en un horario válido para estudiar.");
+      if (!isStudyBlock()) {
+        alert("⛔ Solo puedes empezar a las 18:00, 19:00 o 20:00.");
         return;
       }
       isStudy = true;
@@ -141,7 +107,7 @@
     };
 
     updateDisplay();
-    setInterval(updateDisplay, 60 * 1000); // actualiza estado cada minuto
+    setInterval(updateDisplay, 60 * 1000);
   </script>
 </body>
 </html>
